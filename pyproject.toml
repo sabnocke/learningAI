@@ -1,0 +1,9 @@
+[project]
+name = "pythonproject"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.13"
+dependencies = [
+    "deeplake>=4.3.4",
+    "icecream>=2.1.8",
+]
