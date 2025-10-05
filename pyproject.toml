@@ -1,9 +1,9 @@
 [project]
-name = "pythonproject"
+name = "learningai"
 version = "0.1.0"
 description = "Add your description here"
+readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "deeplake>=4.3.4",
     "icecream>=2.1.8",
 ]
