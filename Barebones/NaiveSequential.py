@@ -2,8 +2,9 @@ import torch as th
 from torch import Tensor
 from NaiveLinear import NaiveLinear
 from typing import List
-from NaiveLRS import LRScheduler, CosineAnnealingLR
+from NaiveLRS import LRScheduler, CosineAnnealingLR, ReduceLROnPlateau
 from BatchGenerator import BatchGenerator
+from icecream import ic
 
 class NaiveSequential:
     def __init__(self, *layers: NaiveLinear, learning_rate: float = 1e-3):
@@ -68,6 +69,8 @@ class NaiveSequential:
 
     def fit(self, images: Tensor, labels: Tensor, epochs: int, batch_size: int = 128):
         old_images = images
+        old_loss = 0.
+        old_acc = 0.
 
         for epoch in range(epochs):
             batch_generator = BatchGenerator(images, labels, batch_size)
@@ -92,7 +95,9 @@ class NaiveSequential:
                 predicted = th.argmax(test_predictions, 1)
                 correct = th.eq(predicted, self.test_labels).sum().item()
                 accuracy = correct / self.test_labels.size(0)
-                print(f"Epoch {epoch + 1}/{epochs} | Test Loss: {loss:.4f} | Test Accuracy: {accuracy:.4f} | Current LR: {current_lr:e}")
+                print(f"Epoch {epoch + 1}/{epochs} | Test Loss: {loss:.4f} ({old_loss / loss:.4f}) | Test Accuracy: {accuracy:.4f} ({old_acc / accuracy:.4f}) | Current LR: {current_lr:e}")
+                old_loss = loss
+                old_acc = accuracy
 
         # if self.err:
         #     print("Detected errors")

@@ -4,6 +4,33 @@ import numpy as np
 
 #TODO add more schedulers
 
+class ReduceLROnPlateau:
+    def __init__(self, init_lr, factor=0.1, patience=5, mode: str = 'min', verbose: bool = False):
+        self.init_lr = init_lr
+        self.factor = factor
+        self.patience = patience
+        self.best_model = float('inf') if mode == 'min' else float('-inf')
+        self.mode = mode
+        self.num_bad_epochs = 0
+        self.current_lr = init_lr
+        self.improve = lambda metric: metric < self.best_model if self.mode == 'min' else metric > self.best_model
+        self.verbose = verbose
+
+    def step(self, metric):
+        is_improving = self.improve(metric)
+
+        if is_improving:
+            self.best_model = metric
+            self.num_bad_epochs = 0
+        else:
+            self.num_bad_epochs += 1
+
+        if self.num_bad_epochs >= self.patience:
+            self.current_lr *= self.factor
+            self.num_bad_epochs = 0
+            if self.verbose:
+                print(f"Reducing learning rate to {self.current_lr:.2e}")
+
 class LRScheduler:
     def __init__(self, init_lr: float, decay_rate: float, decay_steps: int):
         self.init_lr = init_lr
