@@ -6,4 +6,16 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "icecream>=2.1.8",
+    "matplotlib>=3.10.6",
+    "torch>=2.8.0",
+    "torchvision>=0.23.0",
 ]
+
+[[tool.uv.index]]
+name = "pytorch-cuda"
+url = "https://download.pytorch.org/whl/cu129"
+explicit = true
+
+[tool.uv.sources]
+torch = [{index = "pytorch-cuda"}]
+torchvision = [{index = "pytorch-cuda"}]

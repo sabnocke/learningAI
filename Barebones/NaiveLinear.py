@@ -5,7 +5,9 @@ from typing import Callable
 class NaiveLinear:
     def __init__(self, input_size: int, output_size: int, activation: Callable, batch_normalization: bool = False):
         self.weights = th.randn((input_size, output_size), dtype=th.float32, requires_grad=True)
-        self.weights.data.mul(math.sqrt(2. / input_size))
+        self.weights.data.mul_(math.sqrt(2. / input_size))
+
+        self.output_size = output_size
 
         self.bias = th.zeros((output_size,), dtype=th.float32, requires_grad=True)
 
@@ -17,9 +19,9 @@ class NaiveLinear:
         self.has_beta = True
         self.batch_normalization = batch_normalization
 
-        if batch_normalization:
-            self.gamma = th.ones(output_size, dtype=th.float32, requires_grad=True)
-            self.beta = th.zeros(output_size, dtype=th.float32, requires_grad=True)
+        if self.batch_normalization:
+            self.gamma = th.ones(self.output_size, dtype=th.float32, requires_grad=True)
+            self.beta = th.zeros(self.output_size, dtype=th.float32, requires_grad=True)
         else:
             self.gamma = None
             self.beta = None
@@ -37,6 +39,11 @@ class NaiveLinear:
             return self.activation(scaled)
 
         return self.activation(lino)
+
+    def reform(self):
+        self.gamma = th.ones(self.output_size, dtype=th.float32, requires_grad=True)
+        self.beta = th.zeros(self.output_size, dtype=th.float32, requires_grad=True)
+        self.batch_normalization = True
 
     @property
     def parameters(self):
