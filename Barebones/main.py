@@ -5,8 +5,10 @@ from icecream import ic
 from NaiveLinear import NaiveLinear
 from NaiveSequential import NaiveSequential
 import numpy as np
-
+from typing import Union
 import matplotlib.pyplot as plt
+
+type Datasets = Union[tv.datasets.MNIST, tv.datasets.FashionMNIST]
 
 def naive_relu(_in: th.Tensor) -> th.Tensor:
     return th.max(_in, th.zeros_like(_in))
@@ -17,9 +19,38 @@ def naive_softmax(_in: th.Tensor) -> th.Tensor:
 def identity(_in: th.Tensor) -> th.Tensor:
     return _in
 
+def transform(_in: Datasets, device: th.device):
+    one = _in.data.reshape(-1, 28 * 28).to(th.float32) / 255
+    one = one.to(device)
+
+    labels = _in.targets
+    labels = labels.to(device)
+
+    return one, labels
+
+def provide_data(device: th.device):
+    data_train = tv.datasets.MNIST(root=Path.cwd(), train=True, download=True, transform=tv.transforms.ToTensor())
+    data_test = tv.datasets.MNIST(root=Path.cwd(), train=False, download=True, transform=tv.transforms.ToTensor())
+
+    train, train_labels = transform(data_train, device)
+    test, test_labels = transform(data_test, device)
+
+    return train, train_labels, test, test_labels
+
+def provide_data2(device: th.device):
+    train_data = tv.datasets.FashionMNIST(
+        root=Path.cwd(), train=True, download=True, transform=tv.transforms.ToTensor()
+    )
+    test_data = tv.datasets.FashionMNIST(
+        root=Path.cwd(), train=False, download=True, transform=tv.transforms.ToTensor()
+    )
+
+    train, train_labels = transform(train_data, device)
+    test, test_labels = transform(test_data, device)
+
+    return train, train_labels, test, test_labels
 def main() -> None:
     device = th.device("cuda:0" if th.cuda.is_available() else "cpu")
-    ic(device)
 
     model = NaiveSequential(
         NaiveLinear(28 * 28, 512, naive_relu, batch_normalization=True),
@@ -29,20 +60,7 @@ def main() -> None:
         learning_rate=1e-4,
     )
 
-    data_train = tv.datasets.MNIST(root=Path.cwd(), train=True, download=True, transform=tv.transforms.ToTensor())
-    data_test = tv.datasets.MNIST(root=Path.cwd(), train=False, download=True, transform=tv.transforms.ToTensor())
-
-    train = data_train.data.reshape(-1, 28 * 28).to(th.float32) / 255
-    train = train.to(device)
-
-    train_labels = data_train.targets
-    train_labels = train_labels.to(device)
-
-    test = data_test.data.reshape(-1, 28 * 28).to(th.float32) / 255
-    test = test.to(device)
-
-    test_labels = data_test.targets
-    test_labels = test_labels.to(device)
+    train, train_labels, test, test_labels = provide_data2(device)
 
     model.testing = test
     model.test_labels = test_labels
@@ -74,9 +92,7 @@ def main() -> None:
     fig.tight_layout()
     fig.legend(loc='upper left', bbox_to_anchor=(0.15, 0.85))
 
-    # plt.show()
-
-    plt.savefig("training.png")
+    plt.show()
 
 if __name__ == '__main__':
     main()
