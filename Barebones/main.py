@@ -20,7 +20,7 @@ def identity(_in: th.Tensor) -> th.Tensor:
     return _in
 
 def transform(_in: Datasets, device: th.device):
-    one = _in.data.reshape(-1, 28 * 28).to(th.float32) / 255
+    one = _in.data.reshape(-1, 28 * 28).to(th.float32) / 255    # The division converts int B&W to float B&W
     one = one.to(device)
 
     labels = _in.targets

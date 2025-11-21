@@ -1,16 +1,16 @@
+from typing import Callable
 import numpy as np
 
+type Number = int | float
+
 class ReduceLROnPlateau:
-    def __init__(self, init_lr, factor=0.1, patience=5, min_delta: float = 1e-4, mode: str = 'min', verbose: bool = False):
+    def __init__(self, init_lr, factor=0.1, patience=5, min_delta: float = 1e-4):
         self.init_lr = init_lr
         self.factor = factor
         self.patience = patience
-        self.best_model = float('inf') if mode == 'min' else float('-inf')
-        self.mode = mode
+        self.best_model = float('-inf')
         self.num_bad_epochs = 0
         self.current_lr = init_lr
-        self.improve = lambda metric: metric < self.best_model if self.mode == 'min' else metric > self.best_model
-        self.verbose = verbose
         self.min_delta = min_delta
         self.old_change: None | float = None
 
@@ -56,22 +56,39 @@ class ExponentialDecay:
     def step(self, epoch: int):
         return self.init_lr * np.exp(-self.decay_rate * epoch)
 
+# pylint: disable
 class CosineAnnealingLR:
-    def __init__(self, lr_min: float, lr_max: float, pinnacle: int, cyclic: bool = False):
-        """
+    """
+            An algorithm for scheduling learning rate using cosine function.
+            It periodically reaches the **pinnacle** parameter,
+            allowing to escape local minima and exploring entire range of lr values.
+            Args:
+                lr_min (float): The smallest learning rate (final)
+                lr_max (float): The largest learning rate (start)
+                pinnacle (int): At which epoch should be minimum reached
+                cyclic (bool): Sets cyclic learning rate; see Note
 
-        :param lr_min: minimum learning rate, the smallest learning rate ever will be
-        :param lr_max: initial or largest learning rate, the largest learning rate will be
-        :param pinnacle: at which epoch is will the decay be smallest (i.e. equal to lr_min)
-        """
+            Note:
+                If cyclic = False and pinnacle != # of epochs, then two scenarios can happen:
+                    if pinnacle < # of epochs := creates a V point in graph,
+                    where minimum is reached after which the *lr* starts to raise again,
+                    potentially ending with worse results
+
+                    if pinnacle > # of epochs := minimum will be never be reached,
+                    potentially not reaching ideal solution
+            """
+
+    def __init__(self, lr_min: float, lr_max: float, pinnacle: int, cyclic: bool = False) -> None:
+
         self.lr_min = lr_min
         self.lr_max = lr_max
         self.pinnacle = pinnacle
+        self.arg: Callable[[Number], float] = (
+            lambda x: np.pi * ((x % pinnacle) if cyclic else x / pinnacle)
+        )
+        self.lr: Callable[[Number], float] = (
+            lambda x: lr_min + 1/2 * (lr_max - lr_min) * (1 + np.cos(self.arg(x)))
+        )
 
-        if cyclic:
-            self.lr = lambda curr_epoch: lr_min + 1/2 * (lr_max - lr_min) * (1 + np.cos((curr_epoch % pinnacle)/pinnacle * np.pi))
-        else:
-            self.lr = lambda curr_epoch: lr_min + 1/2 * (lr_max - lr_min) * (1 + np.cos(curr_epoch/pinnacle * np.pi))
-
-    def step(self, epoch: int):
+    def step(self, epoch: int) -> float:
         return self.lr(epoch)
