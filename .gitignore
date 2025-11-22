@@ -129,4 +129,4 @@ dmypy.json
 # MNIST
 MNIST/
 
-Barebones/FashionMNIST/
+barebones/FashionMNIST/
