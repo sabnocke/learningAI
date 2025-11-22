@@ -9,7 +9,8 @@ from barebones.naive_lrs.plateau_lrs import ReduceLROnPlateau
 from barebones.naive_lrs.abstract import BaseLearningRateScheduler
 
 __all__ = [
-    "ReduceLROnPlateau", "CosineAnnealingLR", "ExponentialDecay", "StepDecay", "BaseLearningRateScheduler"
+    "ReduceLROnPlateau", "CosineAnnealingLR", "ExponentialDecay",
+    "StepDecay", "BaseLearningRateScheduler"
 ]
 
 __version__ = "0.1.0"
