@@ -1,28 +1,18 @@
 from pathlib import Path
 from typing import Union
-
 import torch as th
 import torchvision as tv
 import numpy as np
 import matplotlib.pyplot as plt
 from torch import nn
-
-# from barebones.naive_layers import linear, sequential, activation
+from torch import Tensor
 from barebones.aux import TrainingConfig
 from barebones.trainer import Trainer
 from barebones.optim import NaiveOptimizer
 from barebones.naive_lrs.cosine_annealing import CosineAnnealingLR
-
-
-# from barebones.naive_layers.dropout import NaiveDropout
-
 from barebones.naive_layers import NaiveLinear, NaiveSequential, NaiveDropout, NaiveReLU
 
 type Datasets = Union[tv.datasets.MNIST, tv.datasets.FashionMNIST]
-type Tensor = th.Tensor
-
-# NaiveSequential = sequential.NaiveSequential
-# NaiveLinear = linear.NaiveLinear
 
 def transform(_in: Datasets, device: th.device):
     one: Tensor = _in.data.reshape(-1, 28 * 28).to(th.float32) / 255
@@ -126,13 +116,6 @@ def main() -> None:
     )
 
     train, train_labels, test, test_labels = provide_data2(device)
-
-    # model.testing = test
-    # model.test_labels = test_labels
-    # model.to(device)
-    # model.verbose = True
-
-    # epochs = 100
 
     print(f"Model device: {model.layers[0].weights.device}")
     print(f"Optimizer state device: {trainer.optimizer.velocities[0].device}")

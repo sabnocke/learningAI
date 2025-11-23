@@ -63,8 +63,6 @@ def prepare_data():
     train_x = scaler.fit_transform(train_x)
     test_x = scaler.transform(test_x)
 
-    # print(train_x.shape, train_y.shape, test_x.shape, test_y.shape)
-
     return TrainingData(
         train_x=torch.from_numpy(train_x.astype(np.float32)),
         test_x=torch.from_numpy(test_x.astype(np.float32)),
@@ -108,7 +106,6 @@ def prepare_fold_data():
     train = df.drop(["medv"], axis=1).values
     targets = df["medv"].values
 
-    # print(train.shape, targets.shape)
 
     x_train, x_test, y_train, y_test = train_test_split(train, targets, test_size=0.2, random_state=42)
 

@@ -1,14 +1,36 @@
+"""
+Defines structure of sequential layer, a layer that goes through each of its sub-layers
+
+Example:
+    NaiveSequential(
+        NaiveLinear(...),
+        NaiveReLU(...),
+
+        NaiveLinear(...),
+        ...
+    )
+"""
+
 from typing import List, Optional, Tuple, override
 import torch as th
 from torch import Tensor
-from barebones.naive_lrs import CosineAnnealingLR
 from barebones.aux import TrainingConfig
-from naive_layers import abstract
+from barebones.naive_layers import abstract
 
 type Layer = abstract.AbstractLayer
 
 class NaiveSequential(abstract.AbstractLayer):
+    r"""
+    Represents a sequential layer, a layer that goes through each of its sub-layers
+    """
+
     def __init__(self, *layers: Layer, config: TrainingConfig):
+        """
+
+        Args:
+            *layers (Layer): Every layer to be used by model
+            config: Configuration for training
+        """
         super().__init__()
 
         self._layers = layers
@@ -16,8 +38,6 @@ class NaiveSequential(abstract.AbstractLayer):
         self.test_labels: Optional[Tensor] = None
         self.learning_rate = config.learning_rate
         self.config = config
-        self.scheduler = CosineAnnealingLR(1e-6, 1e-2, pinnacle=20)
-
         self.loss_collection: List[Tensor] = []
         self.acc_collection: List[float] = []
         self.lr_collection: List[float] = []

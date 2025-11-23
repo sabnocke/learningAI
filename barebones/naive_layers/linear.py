@@ -1,30 +1,64 @@
 """
-Defines structure of layers to be used in NaiveSequential
+Defines structure of linear layer to be used in NaiveSequential
 """
 
 import math
-from typing import List, override
+from typing import List, override, Never
 
 import torch as th
 from torch import Tensor
 
-from barebones.naive_layers import abstract
+from barebones.naive_layers import AbstractLayer
 
 
-class NaiveLinear(abstract.AbstractLayer):
+class NaiveLinear(AbstractLayer):
     r"""
-    A simple linear layer, the exact calculation is following: $W_h \cdot W_i + b$,
-    where $W_i$ is input tensor and
-    $W_h$ is hidden state tensor (what the layer has learned) with
-    $b$ being bias.
+    Fully connected (dense) layer. Performs $y = xA^T + b$
+
+    Includes integrated batch normalization to stabilize training.
 
     Args:
-        input_size: size of input features
+        input_size:
+            size of input features
+            (output size of previous layer or size of input data)
         output_size: size of output features
         batch_normalization: whether to use batch normalization
 
+    Attributes:
+        weights (Tensor): Learnable weights of shape (input_size, output_size).
+        bias (Tensor): Learnable bias of shape (input_size,).
+        running_mean (Tensor): (if BN=True) Tracks moving average of input mean.
+        running_var (Tensor): (if BN=True) Tracks moving average of input variance.
+
     Note:
-        Batch normalization is applying zscore normalization to linear transformation.
+        Batch normalization is applying zscore normalization after linear transformation.
+
+        The He Initialization (or Kaiming Initialization) is a strategy for setting
+        the random initial value of model's weights.
+        Since during back-propagation value of each layer's weights is
+        updated based on previous layer's weights (from last to first).
+
+        If the values are large and there is many of them,
+        by adding them it creates even larger values, scaling towards infinity
+        - this is called exploding gradients
+
+        If the values are small, it creates increasingly smaller values, scaling towards zero
+        - this is called vanishing gradients
+
+        Inevitably either
+
+        - dying
+            - the learning is so small the model freezes
+            - similar to being stuck on a boat in an ocean without any wind
+
+        - crashing
+            - the new values become increasingly larger eventually overflowing their type
+            - thus creating a "NaN" virus;
+                - any operation with NaN creates another NaN, thus the model becomes unusable
+
+        The various initialization methods (of which He is one)
+        are meant to prevent this from happening by "stabilizing"
+        the weights during initialization
     """
 
     def __init__(
@@ -32,14 +66,13 @@ class NaiveLinear(abstract.AbstractLayer):
     ) -> None:
         super().__init__()
 
+        # He initialization (Kaiming normal)
         self.weights = th.randn((input_size, output_size), dtype=th.float32, requires_grad=True)
         self.weights.data.mul_(math.sqrt(2. / input_size))
 
         self.output_size = output_size
 
         self.bias = th.zeros((output_size,), dtype=th.float32, requires_grad=True)
-
-        # self.activation = activation
 
         self.batch_normalization = batch_normalization
         self.__training = True
@@ -92,8 +125,8 @@ class NaiveLinear(abstract.AbstractLayer):
 
     @property
     @override
-    def layers(self) -> None:
-        raise NotImplementedError("This layer cannot have sub-layers")
+    def layers(self) -> List[Never]:
+        return []
 
     @property
     def parameters(self) -> List[Tensor]:
@@ -111,7 +144,7 @@ class NaiveLinear(abstract.AbstractLayer):
 
         return params
 
-    def to(self, device: th.device):
+    def to(self, device: th.device) -> "NaiveLinear":
         """
         Helper method used to send current layer's tensors to device
 
@@ -121,11 +154,9 @@ class NaiveLinear(abstract.AbstractLayer):
             device: a string name for device to which send the tensors
 
         Returns:
-
+            Layer: self
         """
 
-        # self.weights.data = self.weights.data.to(device)
-        # self.bias.data = self.bias.data.to(device)
         self.weights = self.weights.to(device).detach().requires_grad_(True)
         self.bias = self.bias.to(device).detach().requires_grad_(True)
 

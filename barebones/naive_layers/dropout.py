@@ -3,7 +3,24 @@ from torch import Tensor
 from barebones.naive_layers import abstract
 
 class NaiveDropout(abstract.BaseLayer):
+    r"""
+    Inverted Dropout Layer for regularization.
+
+    Randomly zeroes out elements of the input tensor with probability p
+    during training to prevent overfitting.
+
+    ##Math
+    - Training: $\text{output} = \frac{\text{input} \cdot \text{mask}}{1 - p}
+
+    - Inference: output = input
+    """
+
     def __init__(self, p: float = 0.5):
+        """
+
+        Args:
+            p: Probability to zero out elements of the input tensor, default: 0.5
+        """
         super().__init__()
         self.p = p
 
