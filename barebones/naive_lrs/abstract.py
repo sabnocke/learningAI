@@ -35,3 +35,6 @@ class BaseLearningRateScheduler(ABC):
             raise TypeError(
                 f"{cls.__name__} must implement at least one of: _step_int, _step_float"
             )
+
+    def __str__(self):
+        return f"{self.__class__.__name__}"

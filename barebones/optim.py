@@ -7,7 +7,7 @@ from typing import Any, List, Union
 from functools import singledispatchmethod
 from torch import Tensor
 import torch as th
-from barebones.aux import TrainingConfig
+from barebones.config import TrainingConfig
 
 class NaiveOptimizer:
     r"""

@@ -1,3 +1,4 @@
+from os import read
 from typing import Callable, Union, override
 import numpy as np
 
@@ -36,6 +37,7 @@ class CosineAnnealingLR(abstract.BaseLearningRateScheduler):
         self.lr_min = lr_min
         self.lr_max = lr_max
         self.pinnacle = pinnacle
+        self.cyclic = cyclic
         self.arg: Callable[[Number], float] = (
             lambda x: np.pi * ((x % pinnacle) if cyclic else x / pinnacle)
         )
@@ -45,4 +47,20 @@ class CosineAnnealingLR(abstract.BaseLearningRateScheduler):
 
     @override
     def _step_int(self, n: int) -> float:
-        return self.lr(n)
+        if self.cyclic:
+            relative_epoch = n % self.pinnacle
+            t_max = self.pinnacle
+        else:
+            relative_epoch = n
+            t_max = self.pinnacle
+
+        angle = (relative_epoch / t_max) * np.pi
+        return self.lr_min + 1/2 * (self.lr_max - self.lr_min) * (1 + np.cos(angle))
+
+    def __str__(self):
+        return (f"{self.__class__.__name__}\n"
+                f" - lr_min: {self.lr_min}\n"
+                f" - lr_max: {self.lr_max}\n"
+                f" - pinnacle: {self.pinnacle}\n"
+                f" - cyclic: {self.cyclic}"
+                )

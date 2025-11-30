@@ -22,13 +22,10 @@ class NaiveLinear(AbstractLayer):
             size of input features
             (output size of previous layer or size of input data)
         output_size: size of output features
-        batch_normalization: whether to use batch normalization
 
     Attributes:
         weights (Tensor): Learnable weights of shape (input_size, output_size).
         bias (Tensor): Learnable bias of shape (input_size,).
-        running_mean (Tensor): (if BN=True) Tracks moving average of input mean.
-        running_var (Tensor): (if BN=True) Tracks moving average of input variance.
 
     Note:
         Batch normalization is applying zscore normalization after linear transformation.
@@ -62,7 +59,7 @@ class NaiveLinear(AbstractLayer):
     """
 
     def __init__(
-            self, input_size: int, output_size: int, batch_normalization: bool = False
+            self, input_size: int, output_size: int
     ) -> None:
         super().__init__()
 
@@ -74,51 +71,10 @@ class NaiveLinear(AbstractLayer):
 
         self.bias = th.zeros((output_size,), dtype=th.float32, requires_grad=True)
 
-        self.batch_normalization = batch_normalization
         self.__training = True
 
-        if self.batch_normalization:
-            self.gamma = th.ones(self.output_size, dtype=th.float32, requires_grad=True)
-            self.beta = th.zeros(self.output_size, dtype=th.float32, requires_grad=True)
-
-            self.running_mean = th.zeros(self.output_size, dtype=th.float32)
-            self.running_var = th.ones(self.output_size, dtype=th.float32)
-            self.momentum = 0.1
-        else:
-            self.gamma = None
-            self.beta = None
-
     def __call__(self, inputs: Tensor) -> Tensor:
-        lino = inputs @ self.weights + self.bias
-
-        if self.batch_normalization:
-            self.__helper_call_calculations(lino)
-
-        return lino
-
-    def __helper_call_calculations(self, lino: Tensor) -> Tensor:
-        assert self.gamma is not None and self.beta is not None
-
-        if self.__training:
-            batch_mean = th.mean(lino, dim=0, keepdim=True)
-            batch_var = th.var(lino, dim=0, unbiased=False, keepdim=True)
-
-            with ((th.no_grad())):
-                self.running_mean = (
-                        (1 - self.momentum) * self.running_mean +
-                        self.momentum * batch_mean.squeeze()
-                )
-                self.running_var = (
-                        (1 - self.momentum) * self.running_var +
-                        self.momentum * batch_var.squeeze()
-                )
-
-            norm = (lino - batch_mean) / th.sqrt(batch_var + 1e-6)
-        else:
-            norm = (lino - self.running_mean) / th.sqrt(self.running_var + 1e-6)
-
-        scaled = self.gamma * norm + self.beta
-        return scaled
+        return inputs @ self.weights + self.bias
 
     def train(self, train: bool):
         self.__training = train
@@ -137,12 +93,8 @@ class NaiveLinear(AbstractLayer):
             A list containing weights and bias (and additionally gamma and beta for normalization)
 
         """
-        params = [self.weights, self.bias]
-        if self.batch_normalization:
-            assert self.gamma is not None and self.beta is not None
-            params.extend([self.gamma, self.beta])
 
-        return params
+        return [self.weights, self.bias]
 
     def to(self, device: th.device) -> "NaiveLinear":
         """
@@ -159,13 +111,5 @@ class NaiveLinear(AbstractLayer):
 
         self.weights = self.weights.to(device).detach().requires_grad_(True)
         self.bias = self.bias.to(device).detach().requires_grad_(True)
-
-        if self.batch_normalization:
-            assert self.gamma is not None and self.beta is not None
-            self.gamma = self.gamma.to(device).detach().requires_grad_(True)
-            self.beta.data = self.beta.to(device).detach().requires_grad_(True)
-
-            self.running_var = self.running_var.to(device)
-            self.running_mean = self.running_mean.to(device)
 
         return self
